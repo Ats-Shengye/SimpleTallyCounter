@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Tally Counter</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+
+    .help {
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: #1565c0;
+    }
+
+    .help-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .help ul {
+      margin-left: 20px;
+    }
+
+    .settings {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .settings label {
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .settings input {
+      width: 60px;
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .settings button {
+      padding: 6px 12px;
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .settings button:hover {
+      background: #1565c0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    th {
+      background: #424242;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    td {
+      font-size: 1rem;
+    }
+
+    .row-num {
+      background: #f5f5f5;
+      color: #666;
+      font-weight: 500;
+      width: 50px;
+    }
+
+    .row-num.keyboard {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .count-cell {
+      width: auto;
+    }
+
+    .count-cell input {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: left;
+      font-size: 1rem;
+      background: transparent;
+      padding: 6px 10px;
+    }
+
+    .count-cell input:focus {
+      outline: 2px solid #1976d2;
+      background: #e3f2fd;
+    }
+
+    .sheets-cell {
+      width: 100px;
+    }
+
+    .sheets-cell input {
+      width: 70px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 1rem;
+      padding: 6px;
+    }
+
+    .sheets-cell input:focus {
+      outline: 2px solid #1976d2;
+      border-color: #1976d2;
+    }
+
+    .total-cell {
+      font-weight: 500;
+      color: #1565c0;
+      width: 80px;
+    }
+
+    .sum-row {
+      background: #fff3e0;
+    }
+
+    .sum-row td {
+      font-weight: bold;
+      color: #e65100;
+    }
+
+    .sum-label {
+      text-align: right;
+      padding-right: 20px;
+    }
+
+    .actions {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .clear-btn {
+      padding: 10px 30px;
+      background: #d32f2f;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .clear-btn:hover {
+      background: #c62828;
+    }
+
+    .key-hint {
+      font-size: 0.75rem;
+      color: #888;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Simple Tally Counter</h1>
+
+    <div class="help">
+      <div class="help-title">操作方法</div>
+      <ul>
+        <li><strong>1〜0キー</strong>: 1〜10件目の枚数 +1</li>
+        <li><strong>Shift + 1〜0キー</strong>: 枚数 -1</li>
+        <li><strong>テンキー対応</strong></li>
+        <li>11件目以降は直接入力</li>
+        <li>入力欄にフォーカス中はキー操作無効</li>
+      </ul>
+    </div>
+
+    <div class="settings">
+      <label>行数: <input type="number" id="rowCount" value="15" min="1" max="50"></label>
+      <button onclick="applyRowCount()">適用</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>件数</th>
+          <th>枚数</th>
+          <th>合計値</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      </tbody>
+      <tfoot>
+        <tr class="sum-row">
+          <td class="sum-label">枚数合計</td>
+          <td id="sumSheets">0</td>
+          <td></td>
+        </tr>
+        <tr class="sum-row">
+          <td class="sum-label">合算値合計</td>
+          <td></td>
+          <td id="sumTotal">0</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="actions">
+      <button class="clear-btn" onclick="clearAll()">クリア</button>
+    </div>
+  </div>
+
+  <script>
+    let rows = 15;
+    const data = [];
+
+    // 初期化
+    function init() {
+      data.length = 0;
+      for (let i = 0; i < rows; i++) {
+        data.push({ sheets: 0 });
+      }
+      renderTable();
+    }
+
+    // テーブル描画
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      for (let i = 0; i < rows; i++) {
+        const tr = document.createElement('tr');
+        const isKeyboardRow = i < 10;
+        const keyHint = isKeyboardRow ? getKeyHint(i) : '';
+        const itemCount = i + 1; // 件数は固定値
+
+        tr.innerHTML = `
+          <td class="row-num ${isKeyboardRow ? 'keyboard' : ''}">
+            ${itemCount}
+            ${keyHint ? `<span class="key-hint">[${keyHint}]</span>` : ''}
+          </td>
+          <td class="sheets-cell">
+            <input type="number"
+                   value="${data[i].sheets}"
+                   data-row="${i}"
+                   onchange="updateValue(this)"
+                   onfocus="this.select()"
+                   min="0">
+          </td>
+          <td class="total-cell">${itemCount * data[i].sheets}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      updateSums();
+    }
+
+    // キーヒント取得
+    function getKeyHint(index) {
+      if (index === 9) return '0';
+      return String(index + 1);
+    }
+
+    // 値更新
+    function updateValue(input) {
+      const row = parseInt(input.dataset.row);
+      const value = parseInt(input.value) || 0;
+      data[row].sheets = Math.max(0, value);
+      renderTable();
+    }
+
+    // 合計更新
+    function updateSums() {
+      let sumSheets = 0;
+      let sumTotal = 0;
+
+      for (let i = 0; i < rows; i++) {
+        const itemCount = i + 1;
+        sumSheets += data[i].sheets;
+        sumTotal += itemCount * data[i].sheets;
+      }
+
+      document.getElementById('sumSheets').textContent = sumSheets;
+      document.getElementById('sumTotal').textContent = sumTotal;
+    }
+
+    // キーボード操作
+    document.addEventListener('keydown', (e) => {
+      // 入力欄にフォーカス中は無効
+      if (document.activeElement.tagName === 'INPUT') return;
+
+      let keyNum = null;
+
+      // 通常キー (1-9, 0)
+      if (e.code >= 'Digit0' && e.code <= 'Digit9') {
+        keyNum = parseInt(e.code.replace('Digit', ''));
+      }
+      // テンキー
+      else if (e.code >= 'Numpad0' && e.code <= 'Numpad9') {
+        keyNum = parseInt(e.code.replace('Numpad', ''));
+      }
+
+      if (keyNum === null) return;
+
+      // 0 → 10行目、1-9 → 1-9行目
+      const rowIndex = keyNum === 0 ? 9 : keyNum - 1;
+
+      if (rowIndex >= rows) return;
+
+      e.preventDefault();
+
+      if (e.shiftKey) {
+        data[rowIndex].sheets = Math.max(0, data[rowIndex].sheets - 1);
+      } else {
+        data[rowIndex].sheets++;
+      }
+
+      renderTable();
+    });
+
+    // 行数適用
+    function applyRowCount() {
+      const input = document.getElementById('rowCount');
+      const newRows = parseInt(input.value) || 15;
+      rows = Math.max(1, Math.min(50, newRows));
+      input.value = rows;
+      init();
+    }
+
+    // クリア
+    function clearAll() {
+      if (confirm('全てのデータをクリアしますか？')) {
+        init();
+      }
+    }
+
+    // 起動
+    init();
+  </script>
+</body>
+</html>
